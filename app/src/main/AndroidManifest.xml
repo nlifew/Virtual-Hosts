@@ -64,22 +64,6 @@
             </intent-filter>
         </service>
 
-        <meta-data
-                android:name="BaiduMobAd_STAT_ID"
-                android:value="a7bceb64e8"/> <!-- abcd1234 -->
-        <meta-data
-                android:name="BaiduMobAd_CHANNEL"
-                android:value="${Market_CHANNEL_VALUE}"/>
-        <meta-data
-                android:name="BaiduMobAd_EXCEPTION_LOG"
-                android:value="true"/>
-        <meta-data
-                android:name="BaiduMobAd_SEND_STRATEGY"
-                android:value="APP_START"/>
-        <meta-data
-                android:name="BaiduMobAd_ONLY_WIFI"
-                android:value="false"/>
-
         <service
                 android:name=".QuickStartTileService"
                 android:icon="@drawable/tile"
@@ -101,10 +85,6 @@
                     android:name="android.appwidget.provider"
                     android:resource="@xml/quick_start_widget_info"/>
         </receiver>
-
-        <activity android:name=".DonationActivity"
-                  android:exported="false">
-        </activity>
 
         <activity android:name=".SettingsActivity"
                   android:label="Settings"

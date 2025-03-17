@@ -30,7 +30,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.github.clans.fab.FloatingActionButton;
 import com.github.xfalcon.vhosts.util.LogUtils;
 import com.github.xfalcon.vhosts.vservice.VhostsService;
-import com.google.firebase.analytics.FirebaseAnalytics;
 import com.suke.widget.SwitchButton;
 
 import java.lang.reflect.Field;
@@ -38,9 +37,6 @@ import java.lang.reflect.Field;
 public class VhostsActivity extends AppCompatActivity {
 
     private static final String TAG = VhostsActivity.class.getSimpleName();
-
-    private FirebaseAnalytics mFirebaseAnalytics;
-
 
     private boolean waitingForVPNStart;
 
@@ -59,9 +55,6 @@ public class VhostsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         launch();
 
-//        StatService.autoTrace(this, true, false);
-        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
-
         setContentView(R.layout.activity_vhosts);
         LogUtils.context = getApplicationContext();
         final SwitchButton vpnButton = findViewById(R.id.button_start_vpn);
@@ -69,7 +62,6 @@ public class VhostsActivity extends AppCompatActivity {
         final Button selectHosts = findViewById(R.id.button_select_hosts);
         final FloatingActionButton fab_setting = findViewById(R.id.fab_setting);
         final FloatingActionButton fab_boot = findViewById(R.id.fab_boot);
-        final FloatingActionButton fab_donation = findViewById(R.id.fab_donation);
 
         if (checkHostUri() == -1) {
             selectHosts.setText(getString(R.string.select_hosts));
@@ -120,12 +112,6 @@ public class VhostsActivity extends AppCompatActivity {
             public boolean onLongClick(View view) {
                   startActivity(new Intent(getApplicationContext(), SettingsActivity.class));
                 return false;
-            }
-        });
-        fab_donation.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(getApplicationContext(), DonationActivity.class));
             }
         });
 
