@@ -2,6 +2,7 @@ package com.github.xfalcon.vhosts
 
 import android.content.Intent
 import android.net.Uri
+import android.net.VpnService
 import android.os.Bundle
 import android.text.style.ForegroundColorSpan
 import android.util.Log
@@ -14,9 +15,14 @@ import androidx.preference.PreferenceManager
 import com.github.xfalcon.vhosts.databinding.ActivityVhostsBinding
 import com.github.xfalcon.vhosts.util.doWhenActivityResultOk
 import com.github.xfalcon.vhosts.util.registerLocalBroadcast
+import com.github.xfalcon.vhosts.util.sendLocalBroadcast
+import com.github.xfalcon.vhosts.util.settings
 import com.github.xfalcon.vhosts.util.startActivity
 import com.github.xfalcon.vhosts.util.withSpans
-import com.github.xfalcon.vhosts.vservice.VhostsService
+import com.github.xfalcon.vhosts.vservice.BROADCAST_CLOSE_SERVICE
+import com.github.xfalcon.vhosts.vservice.BROADCAST_VPN_STATE
+import com.github.xfalcon.vhosts.vservice.VhostsService2
+import com.github.xfalcon.vhosts.vservice.isVhostsServiceRunning
 
 private const val TAG = "VhostsActivity"
 
@@ -61,8 +67,8 @@ class VhostsActivity: AppCompatActivity() {
                 it.text = getString(R.string.select_hosts)
             }
         }
-        registerLocalBroadcast(VhostsService.BROADCAST_VPN_STATE) {
-            if (VhostsService.isRunning()) {
+        registerLocalBroadcast(BROADCAST_VPN_STATE) {
+            if (isVhostsServiceRunning) {
                 waitingForVPNStart = false
             }
         }
@@ -71,10 +77,12 @@ class VhostsActivity: AppCompatActivity() {
     private fun launch() {
         val data = intent?.data?.toString() ?: return
         if ("on" == data) {
-            if (!VhostsService.isRunning()) VhostsService.startVService(this, 1)
+            if (!isVhostsServiceRunning) {
+                startService(Intent(this, VhostsService2::class.java))
+            }
             finish()
         } else if ("off" == data) {
-            VhostsService.stopVService(this)
+            sendLocalBroadcast { Intent(BROADCAST_CLOSE_SERVICE) }
             finish()
         }
     }
@@ -105,24 +113,19 @@ class VhostsActivity: AppCompatActivity() {
 
     private fun startVPN() {
         waitingForVPNStart = false
-        val vpnIntent = VhostsService.prepare(this)
+        val vpnIntent = VpnService.prepare(this)
         if (vpnIntent != null) {
             requestVpnPermissionLauncher.launch(vpnIntent)
         }
         else {
             waitingForVPNStart = true
-            startService(
-                Intent(
-                    this,
-                    VhostsService::class.java
-                ).setAction(VhostsService.ACTION_CONNECT)
-            )
+            startService(Intent(this, VhostsService2::class.java))
             setButton(false)
         }
     }
 
     private fun checkHostUri(): Int {
-        val settings = PreferenceManager.getDefaultSharedPreferences(this)
+        val settings = settings()
         if (settings.getBoolean(SettingsFragment.IS_NET, false)) {
             try {
                 openFileInput(SettingsFragment.NET_HOST_FILE).close()
@@ -180,18 +183,13 @@ class VhostsActivity: AppCompatActivity() {
     }
 
     private fun shutdownVPN() {
-        if (VhostsService.isRunning()) startService(
-            Intent(
-                this,
-                VhostsService::class.java
-            ).setAction(VhostsService.ACTION_DISCONNECT)
-        )
+        sendLocalBroadcast { Intent(BROADCAST_CLOSE_SERVICE) }
         setButton(true)
     }
 
     override fun onResume() {
         super.onResume()
-        setButton(!waitingForVPNStart && !VhostsService.isRunning())
+        setButton(!waitingForVPNStart && !isVhostsServiceRunning)
     }
 
     private fun setButton(enable: Boolean) {

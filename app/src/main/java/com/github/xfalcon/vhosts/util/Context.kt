@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -28,16 +29,19 @@ inline fun broadcastReceiver(crossinline block: (Intent) -> Unit) = object: Broa
     }
 }
 
-@JvmInline
-value class IntentScope(val intent: Intent) {
-    infix fun String.to(value: Boolean) {
-        intent.putExtra(this, value)
-    }
+inline fun Context.sendLocalBroadcast(block: () -> Intent) {
+    LocalBroadcastManager.getInstance(applicationContext)
+        .sendBroadcast(block.invoke())
 }
 
-inline fun Context.sendLocalBroadcast(block: (IntentScope) -> Unit) {
-    LocalBroadcastManager.getInstance(applicationContext)
-        .sendBroadcast(intent(block).intent)
+inline fun Context.registerLocalBroadcast(
+    action: String,
+    crossinline block: (Intent) -> Unit
+): BroadcastReceiver {
+    val receiver = broadcastReceiver(block)
+    LocalBroadcastManager.getInstance(this)
+        .registerReceiver(receiver, IntentFilter(action))
+    return receiver
 }
 
 inline fun Context.registerLocalBroadcast(
@@ -46,7 +50,7 @@ inline fun Context.registerLocalBroadcast(
     crossinline onReceive: (Intent) -> Unit
 ) {
     val receiver = broadcastReceiver(onReceive)
-    val manager = LocalBroadcastManager.getInstance(applicationContext)
+    val manager = LocalBroadcastManager.getInstance(this)
     manager.registerReceiver(receiver, IntentFilter(action))
     lifecycleOwner.lifecycle.observe(
         onDestroy = { manager.unregisterReceiver(receiver) }
@@ -60,11 +64,28 @@ inline fun AppCompatActivity.registerLocalBroadcast(
     registerLocalBroadcast(this, action, onReceive)
 }
 
-
-inline fun <reified T: Activity> Context.startActivity(vararg args: Pair<String, Any>) {
-    startActivity(Intent(this, T::class.java).putExtras(bundleOf(*args)))
+fun Context.removeLocalBroadcast(receiver: BroadcastReceiver) {
+    LocalBroadcastManager.getInstance(this)
+        .unregisterReceiver(receiver)
 }
 
-inline fun intent(block: (IntentScope) -> Unit): IntentScope {
-    return IntentScope(Intent()).also(block)
+inline fun <reified T: Activity> Context.startActivity(vararg args: Pair<String, Any>) {
+    val intent = Intent(this, T::class.java)
+
+    if (args.isNotEmpty()) {
+        intent.putExtras(bundleOf(*args))
+    }
+    if (this !is Activity) {
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    startActivity(intent)
+}
+
+
+inline fun <reified T> Context.toast(len: Int = Toast.LENGTH_LONG, block: () -> T) {
+    val text = when (val result = block()) {
+        is Int -> getString(result)
+        else -> result.toString()
+    }
+    Toast.makeText(this, text, len).show()
 }

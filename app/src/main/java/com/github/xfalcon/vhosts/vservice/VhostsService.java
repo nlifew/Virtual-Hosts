@@ -29,12 +29,12 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.Looper;
 import android.os.ParcelFileDescriptor;
+import android.util.Log;
 import android.widget.Toast;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.github.xfalcon.vhosts.NetworkReceiver;
 import com.github.xfalcon.vhosts.R;
 import com.github.xfalcon.vhosts.SettingsFragment;
-import com.github.xfalcon.vhosts.VhostsActivity;
 import com.github.xfalcon.vhosts.util.LogUtils;
 import org.xbill.DNS.Address;
 
@@ -91,7 +91,7 @@ public class VhostsService extends VpnService {
                 NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                 manager.createNotificationChannel(channel);
                 Notification notification = new Notification.Builder(this, "vhosts_channel_id")
-                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setSmallIcon(R.mipmap.ic_launcher_foreground)
                         .setContentTitle("Virtual Hosts Running")
                         .build();
                 startForeground(1, notification);
@@ -202,10 +202,10 @@ public class VhostsService extends VpnService {
                     } catch (PackageManager.NameNotFoundException e) {
                         LogUtils.e(TAG, e.getMessage(), e);
                     }
-
                 }
             }
             vpnInterface = builder.setSession(getString(R.string.app_name)).setConfigureIntent(pendingIntent).establish();
+            Log.d(TAG, "setupVPN: " + vpnInterface);
         }
     }
 
@@ -285,8 +285,12 @@ public class VhostsService extends VpnService {
 
     @Override
     public void onDestroy() {
-        stopVService();
         super.onDestroy();
+        stopVService();
+        isRunning = false;
+        LocalBroadcastManager
+                .getInstance(this)
+                .sendBroadcast(new Intent(BROADCAST_VPN_STATE).putExtra("running", false));
     }
 
     private void cleanup() {

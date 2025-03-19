@@ -6,7 +6,7 @@ android {
     compileSdk 33
     defaultConfig {
         namespace "com.github.xfalcon.vhosts"
-        minSdkVersion 19
+        minSdkVersion 27
         targetSdkVersion 33
         versionCode 42
         versionName "2.2.2"
@@ -36,7 +36,6 @@ android {
     viewBinding {
         enabled = true
     }
-
 }
 
 dependencies {
@@ -47,7 +46,6 @@ dependencies {
     implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'com.github.zcweng:switch-button:0.0.3@aar'
-    implementation 'com.github.clans:fab:1.6.4'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
